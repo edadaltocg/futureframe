@@ -15,9 +15,10 @@ import math
 import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Self
 
 import pandas as pd
+from sklearn.preprocessing import MinMaxScaler
 import torch
 import torch.nn.functional as F
 import torch.nn.init as nn_init
@@ -25,8 +26,9 @@ from torch import Tensor, nn
 from transformers import BertTokenizerFast
 
 from futureframe import config
-from futureframe.data.encoding import BaseFeaturesToModelInput
+from futureframe.encoding.base import BaseFeatureEncoder
 from futureframe.data.features import infer_majority_dtype
+from futureframe.encoding.num import NumericFeatureEncoder
 from futureframe.models.base import BaseModelForFinetuning
 from futureframe.types import BaseInput, ColumnDtype
 from futureframe.utils import (
@@ -62,7 +64,7 @@ class CM2EncodedInputs(BaseInput):
     cat_col_attn_mask: Tensor
 
 
-class CM2FeaturesToModelInput(BaseFeaturesToModelInput):
+class CM2FeaturesToModelInput(BaseFeatureEncoder):
     """Class for encoding features to CM2 model input"""
 
     def __init__(
@@ -83,12 +85,12 @@ class CM2FeaturesToModelInput(BaseFeaturesToModelInput):
             categorical_columns (list, optional): List of categorical column names. Defaults to None.
             numerical_columns (list, optional): List of numerical column names. Defaults to None.
         """
-        tokenizer_dir = os.path.join(weights_dir, "tokenizer")
+        feature_encoder_dir = os.path.join(weights_dir, "feature_encoder")
         if download:
-            self.download(tokenizer_dir)
-            self.save(tokenizer_dir)
+            self.download(feature_encoder_dir)
+            self.save(feature_encoder_dir)
         else:
-            self.load(tokenizer_dir)
+            self.load(feature_encoder_dir)
 
         self.tokenizer.__dict__["model_max_length"] = 512
 
@@ -97,6 +99,7 @@ class CM2FeaturesToModelInput(BaseFeaturesToModelInput):
 
         self.categorical_columns = categorical_columns
         self.numerical_columns = numerical_columns
+        self.num_enc = NumericFeatureEncoder(feature_encoder_dir, MinMaxScaler())
 
     def download(self, path):
         """
@@ -159,14 +162,28 @@ class CM2FeaturesToModelInput(BaseFeaturesToModelInput):
         """
         log.debug(f"Tokenizing data: {data=}")
         if len(data) == 0:
-            input_ids = torch.tensor([], dtype=torch.long).reshape(0, 0)
-            attention_mask = torch.tensor([], dtype=torch.long).reshape(0, 0)
+            input_ids = torch.tensor([], dtype=torch.long).reshape(0, 1)
+            attention_mask = torch.tensor([], dtype=torch.long).reshape(0, 1)
             out = dict(input_ids=input_ids, attention_mask=attention_mask)
         else:
             out = self.tokenizer(
                 data, padding=True, truncation=True, add_special_tokens=False, return_tensors="pt", max_length=512
             )
         return out
+
+    def prepare(self, data: pd.DataFrame) -> "Self":
+        categorized_columns, _ = infer_majority_dtype(data)
+        log.debug(f"{categorized_columns=}")
+
+        self.numerical_columns, self.categorical_columns = self._get_columns_types(categorized_columns)
+        log.debug(f"{self.numerical_columns=}")
+        log.debug(f"{self.categorical_columns=}")
+
+        x_num = data[self.numerical_columns].apply(pd.to_numeric, errors="coerce")
+        x_num = x_num.apply(lambda x: x.fillna(x.median()), axis=0)
+        self.num_enc.prepare(x_num)
+
+        return self
 
     @torch.no_grad()
     def encode(self, data: pd.DataFrame) -> dict[str, Tensor]:
@@ -179,13 +196,6 @@ class CM2FeaturesToModelInput(BaseFeaturesToModelInput):
         Returns:
             CM2EncodedInputs: Encoded inputs for the CM2 model.
         """
-        if self.categorical_columns is None or self.numerical_columns is None:
-            categorized_columns, _ = infer_majority_dtype(data)
-            log.debug(f"{categorized_columns=}")
-
-            self.numerical_columns, self.categorical_columns = self._get_columns_types(categorized_columns)
-            log.debug(f"{self.numerical_columns=}")
-            log.debug(f"{self.categorical_columns=}")
 
         # tokenize columns
         num_col_t = self.tokenize(self.numerical_columns)
@@ -210,6 +220,7 @@ class CM2FeaturesToModelInput(BaseFeaturesToModelInput):
         # preprocess numerical values
         x_num = data[self.numerical_columns].apply(pd.to_numeric, errors="coerce")
         x_num = x_num.apply(lambda x: x.fillna(x.median()), axis=0)
+        x_num = self.num_enc.encode(x_num)
         x_num = torch.from_numpy(x_num.values).float()
 
         return CM2EncodedInputs(
@@ -770,6 +781,47 @@ class CM2Model(nn.Module):
         torch.save(state_dict, os.path.join(ckpt_dir, "pytorch_model.bin"))
 
 
+class CM2FineTunedMixin(CM2Model, BaseModelForFinetuning):
+    def __init__(
+        self,
+        head,
+        download=True,
+        load_pre_trained=True,
+        checkpoints_dir=config.CACHE_ROOT,
+        categorical_columns=None,
+        numerical_columns=None,
+        hidden_dim=128,
+        num_layer=2,
+        num_attention_head=8,
+        hidden_dropout_prob=0.1,
+        ffn_dim=256,
+        activation="relu",
+        vocab_freeze=False,
+        pool_policy="avg",
+    ) -> None:
+        super().__init__(
+            download,
+            load_pre_trained,
+            checkpoints_dir,
+            categorical_columns,
+            numerical_columns,
+            hidden_dim,
+            num_layer,
+            num_attention_head,
+            hidden_dropout_prob,
+            ffn_dim,
+            activation,
+            vocab_freeze,
+            pool_policy,
+        )
+        self.head = head
+
+    def forward(self, x):
+        x = super().forward(x)
+        logits = self.head(x)
+        return logits
+
+
 class CM2LinearClassifierHead(nn.Module):
     def __init__(self, num_class, hidden_dim=128) -> None:
         super().__init__()
@@ -786,7 +838,7 @@ class CM2LinearClassifierHead(nn.Module):
         return logits
 
 
-class CM2Classifier(CM2Model, BaseModelForFinetuning):
+class CM2Classifier(CM2FineTunedMixin):
     """
     CM2Classifier is a classifier model based on the CM2Model architecture.
 
@@ -825,6 +877,7 @@ class CM2Classifier(CM2Model, BaseModelForFinetuning):
         pool_policy="avg",
     ) -> None:
         super().__init__(
+            head=CM2LinearClassifierHead(num_class=num_class, hidden_dim=hidden_dim),
             download=download,
             load_pre_trained=load_pre_trained,
             checkpoints_dir=checkpoint_dir,
@@ -840,20 +893,13 @@ class CM2Classifier(CM2Model, BaseModelForFinetuning):
             pool_policy=pool_policy,
         )
 
-        self.head = CM2LinearClassifierHead(num_class=num_class, hidden_dim=self.hidden_dim)
-
-    def forward(self, x):
-        x = super().forward(x)
-        logits = self.head(x)
-        return logits
-
 
 class CM2LinearRegressionHead(CM2LinearClassifierHead):
     def __init__(self, hidden_dim=128) -> None:
         super().__init__(1, hidden_dim)
 
 
-class CM2Regression(CM2Model, BaseModelForFinetuning):
+class CM2Regression(CM2FineTunedMixin):
     """
     CM2Regression is a class that represents a regression model based on the CM2 architecture.
 
@@ -880,14 +926,16 @@ class CM2Regression(CM2Model, BaseModelForFinetuning):
         categorical_columns=None,
         numerical_columns=None,
         hidden_dim=128,
-        num_layer=2,
+        num_layer=3,
         num_attention_head=8,
-        hidden_dropout_prob=0,
+        hidden_dropout_prob=0.1,
         ffn_dim=256,
         activation="relu",
-        vocab_freeze=False,
+        vocab_freeze=True,
+        pool_policy="avg",
     ) -> None:
         super().__init__(
+            head=CM2LinearRegressionHead(hidden_dim=hidden_dim),
             download=download,
             load_pre_trained=load_pre_trained,
             checkpoints_dir=checkpoint_dir,
@@ -900,10 +948,46 @@ class CM2Regression(CM2Model, BaseModelForFinetuning):
             ffn_dim=ffn_dim,
             activation=activation,
             vocab_freeze=vocab_freeze,
+            pool_policy=pool_policy,
         )
-        self.head = CM2LinearRegressionHead(hidden_dim=hidden_dim)
 
-    def forward(self, x):
-        x = super().forward(x)
-        logits = self.head(x)
-        return logits
+
+class CM2ForFineTuning(CM2FineTunedMixin):
+    def __init__(
+        self,
+        download=True,
+        load_pre_trained=True,
+        checkpoint_dir=os.path.join(config.CACHE_ROOT, "cm2"),
+        categorical_columns=None,
+        numerical_columns=None,
+        num_class=2,
+        hidden_dim=128,
+        num_layer=3,
+        num_attention_head=8,
+        hidden_dropout_prob=0.1,
+        ffn_dim=256,
+        activation="relu",
+        vocab_freeze=True,
+        pool_policy="avg",
+    ) -> None:
+        if num_class >= 2:
+            head = CM2LinearClassifierHead(num_class=num_class, hidden_dim=self.hidden_dim)
+        else:
+            head = CM2LinearRegressionHead(hidden_dim=self.hidden_dim)
+
+        super().__init__(
+            head=head,
+            download=download,
+            load_pre_trained=load_pre_trained,
+            checkpoints_dir=checkpoint_dir,
+            categorical_columns=categorical_columns,
+            numerical_columns=numerical_columns,
+            hidden_dim=hidden_dim,
+            num_layer=num_layer,
+            num_attention_head=num_attention_head,
+            hidden_dropout_prob=hidden_dropout_prob,
+            ffn_dim=ffn_dim,
+            activation=activation,
+            vocab_freeze=vocab_freeze,
+            pool_policy=pool_policy,
+        )

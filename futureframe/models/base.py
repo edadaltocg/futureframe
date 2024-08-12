@@ -15,10 +15,6 @@ class BaseModelForFinetuning(nn.Module):
         input_encoder: The input encoder for the model.
     """
 
-    def __init__(self, input_encoder):
-        super().__init__()
-        self.input_encoder = input_encoder
-
     def finetune(
         self,
         X_train: pd.DataFrame,
@@ -30,7 +26,7 @@ class BaseModelForFinetuning(nn.Module):
         patience: Optional[int] = 3,
         lr: float = 1e-3,
         batch_size: int = 64,
-        num_workers: int = 8,
+        num_workers: int = 0,
         val_size: float = 0.05,
         seed: int = 42,
     ):
