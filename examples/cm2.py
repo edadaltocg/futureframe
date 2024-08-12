@@ -20,7 +20,7 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_
 ##############
 # Future Frame
 ##############
-model = ff.models.CM2Classifier()
+model = ff.models.cm2.CM2Classifier()
 model.finetune(X_train, y_train)
 
 y_pred = model.predict(X_test)

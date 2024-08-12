@@ -10,14 +10,13 @@ from torch import nn, optim
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from futureframe.encoding.base import BaseFeatureEncoder
 from futureframe.data.features import get_num_classes, prepare_target_for_eval
 from futureframe.data.tabular_datasets import SupervisedDatasetWithInputEncoder
+from futureframe.encoding.base import BaseFeatureEncoder
+from futureframe.logger import logger as log
 from futureframe.optim import get_linear_warmup_cos_lr_scheduler
 from futureframe.tasks import create_task
 from futureframe.utils import get_num_parameters, seed_all, send_to_device_recursively
-from futureframe.logger import logger as log
-
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
