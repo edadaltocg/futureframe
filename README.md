@@ -69,7 +69,3 @@ More foundation models will be integrated into the library soon. Stay stuned by 
 - We are currently under heavy development.
 - If you'd like to contribute, please send us an email at <i>eduardo(at)futureframe.ai</i>.
 - To report a bug, please write an [issue](https://github.com/futureframeai/futureframe/issues/new).
-
----
-
-Foundation models for tabular data can AI performance for Healthcare, Education, Telecommunications, Energy, and Finance industries.
