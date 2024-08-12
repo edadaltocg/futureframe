@@ -251,15 +251,15 @@ class CM2WordEmbedding(nn.Module):
             self.download(weights_dir)
 
         weights_path = Path(weights_dir)
-        word2vec_weight = torch.load(weights_path / "bert_emb.pt")
+        word2vec_weight = torch.load(weights_path / "bert_emb.pt", weights_only=True)
         self.word_embeddings_header = nn.Embedding.from_pretrained(
             word2vec_weight, freeze=vocab_freeze, padding_idx=padding_idx
         )
         self.word_embeddings_value = nn.Embedding(vocab_size, vocab_dim, padding_idx)
 
         self.norm_header = nn.LayerNorm(vocab_dim, eps=layer_norm_eps)
-        weight_emb = torch.load(weights_path / "bert_layernorm_weight.pt")
-        bias_emb = torch.load(weights_path / "bert_layernorm_bias.pt")
+        weight_emb = torch.load(weights_path / "bert_layernorm_weight.pt", weights_only=True)
+        bias_emb = torch.load(weights_path / "bert_layernorm_bias.pt", weights_only=True)
         self.norm_header.weight.data.copy_(weight_emb)
         self.norm_header.bias.data.copy_(bias_emb)
 
@@ -646,7 +646,9 @@ class CM2Encoder(nn.Module):
                 use_layer_norm=True,
                 activation=activation,
             )
-            stacked_transformer = nn.TransformerEncoder(encoder_layer, num_layers=num_layer - 1)
+            stacked_transformer = nn.TransformerEncoder(
+                encoder_layer, num_layers=num_layer - 1, enable_nested_tensor=False
+            )
             self.transformer_encoder.append(stacked_transformer)
 
     def forward(self, embedding, attention_mask=None, **kwargs) -> Tensor:
@@ -767,7 +769,7 @@ class CM2Model(nn.Module):
 
     def load(self, ckpt_dir):
         model_name = os.path.join(ckpt_dir, "pytorch_model.bin")
-        state_dict = torch.load(model_name, map_location="cpu")
+        state_dict = torch.load(model_name, map_location="cpu", weights_only=True)
         missing_keys, unexpected_keys = self.load_state_dict(state_dict, strict=False)
         log.info(f"loaded pre-trained model weights from {ckpt_dir}")
         log.info(f"with missing keys: {missing_keys} and unexpected keys: {unexpected_keys}")

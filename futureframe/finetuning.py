@@ -108,8 +108,7 @@ def finetune(
     lr_scheduler = get_linear_warmup_cos_lr_scheduler(optimizer, max_steps, lr=lr)
 
     trainable, non_trainable = get_num_parameters(model)
-    log.info(f"Trainable parameters: {trainable}")
-    log.info(f"Non-trainable parameters: {non_trainable}")
+    log.debug(f"Trainable parameters: {trainable}, Non-trainable parameters: {non_trainable}")
 
     history = defaultdict(list)
     pbar = tqdm(range(max_steps), desc="Fine-tuning")
