@@ -43,7 +43,6 @@ def clean_df(df: pd.DataFrame):
 
 
 def get_type(val):
-    # log.debug(f"{val=}")
     t = ValueDtype.OTHER.name
     if pd.isna(val):
         t = ValueDtype.NAN.name
@@ -72,7 +71,6 @@ def get_type(val):
         else:
             t = ValueDtype.get(type(val).__name__).name
 
-    # log.debug(f"{t=}")
     return t
 
 
@@ -180,6 +178,10 @@ def get_float_mask(df: pd.DataFrame):
     return get_dtype_mask(df, float)
 
 
+def get_nan_mask(df: pd.DataFrame):
+    return df.isna()
+
+
 def get_non_nan_values_indices(df: pd.DataFrame):
     mask_values = df.values
     mask_shape = mask_values.shape
@@ -284,7 +286,7 @@ def get_num_classes(y: TargetType, task_type: Optional[TaskType] = None):
     log.debug(f"{pd.api.types.is_float_dtype(y)=}")
     if pd.api.types.is_numeric_dtype(y):
         fractional_parts, integral_parts = np.modf(y)
-        # if all fractional parts are zero, then it is an integer
+        # if all fractional parts are zero, then it is an integerfeatures
         if np.all(fractional_parts == 0):
             n_unique = y.nunique()
             if n_unique == 2:

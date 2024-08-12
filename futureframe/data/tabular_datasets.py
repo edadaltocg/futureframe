@@ -77,6 +77,18 @@ class SupervisedDataset(Dataset):
         return X, y
 
 
+class SupervisedDatasetWithInputEncoder(SupervisedDataset):
+    def __init__(self, X: pd.DataFrame, y: pd.DataFrame | pd.Series, input_encoder=None):
+        super().__init__(X, y)
+        self.input_encoder = input_encoder
+
+    def collate_fn(self, batch):
+        X, y = super().collate_fn(batch)
+
+        X = self.input_encoder.encode(X) if self.input_encoder is not None else X
+        return X, y
+
+
 class FeatureDataset(Dataset):
     def __init__(self, df: pd.DataFrame, tokenizer=None):
         self.df = df
@@ -98,8 +110,12 @@ class FeatureDataset(Dataset):
         return X
 
 
-class KaggleDataset(SupervisedDataset):
-    def __init__(self, dataset_link="") -> None:
-        X = ...
-        y = ...
-        super().__init__(X=X, y=y)
+class FeatureDatasetWithInputEncoder(FeatureDataset):
+    def __init__(self, df: pd.DataFrame, input_encoder=None):
+        super().__init__(df)
+        self.input_encoder = input_encoder
+
+    def collate_fn(self, batch):
+        X = super().collate_fn(batch)
+        X = self.input_encoder.encode(X) if self.input_encoder is not None else X
+        return X

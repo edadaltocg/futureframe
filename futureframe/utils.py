@@ -1,20 +1,23 @@
 import functools
-import zipfile
-import requests
+import gzip
+import logging
+import math
 import os
 import random
+import shutil
 import time
+import zipfile
 from typing import Any
-from tqdm import tqdm
 
 import numpy as np
 import pandas as pd
 import pyarrow.parquet as pq
 import regex
+import requests
 import torch
 import torch.nn.functional as F
 from torch import Tensor, nn
-import logging
+from tqdm import tqdm
 
 log = logging.getLogger(__name__)
 
@@ -318,7 +321,7 @@ def save_or_append_to_csv(df: pd.DataFrame, path: str):
         df.to_csv(path, mode="a", header=False, index=False)
 
 
-def download_file(url, local_path):
+def download_file(url: str, local_path: str):
     log.info(f"Downloading file from {url}")
     response = requests.get(url, stream=True)
     total_size = int(response.headers.get("content-length", 0))
@@ -339,18 +342,65 @@ def download_file(url, local_path):
 
 
 # Function to extract the zip file
-def extract_zip(zip_path, extract_to="."):
+def extract_zip(zip_path, extract_to=".", delete_zip=True):
+    """
+    Extract a zip file to the destination directory.
+
+    Args:
+        zip_path (str): The path to the zip file.
+        dest (str): The destination directory.
+        delete_zip (bool): If True, delete the zip file after extraction.
+    """
     log.info(f"Extracting {zip_path} to {extract_to}")
     with zipfile.ZipFile(zip_path, "r") as zip_ref:
         zip_ref.extractall(extract_to)
-    log.info("Extraction complete.")
+
+    if delete_zip:
+        os.remove(zip_path)
 
 
-def download_and_extract(url: str, root: str, filename=None, clean=False):
+def extract_gzip(gzip_path, extract_to=".", delete_gzip=True):
+    log.info(f"Extracting {gzip_path} to {extract_to}")
+    filename = os.path.basename(gzip_path)
+    dest_filepath = os.path.join(extract_to, filename.replace(".gz", ""))
+    with gzip.open(gzip_path, "rb") as f_in:
+        with open(dest_filepath, "wb") as f_out:
+            shutil.copyfileobj(f_in, f_out)
+
+    if delete_gzip:
+        os.remove(gzip_path)
+
+
+def recursive_unzip(dest):
+    """
+    Recursively unzip all zip files in the given directory and its subdirectories.
+
+    Args:
+        dest (str): The directory to search for zip files.
+    """
+    for root, _, files in os.walk(dest):
+        for file in files:
+            if file.endswith(".zip"):
+                zip_path = os.path.join(root, file)
+                extract_zip(zip_path, root, True)
+                # Call the function recursively in case new zip files were extracted
+                recursive_unzip(root)
+
+
+def download_and_extract(
+    url: str, root: str, filename: str | None = None, clean: bool = False, overwrite: bool = False
+):
     if filename is None:
         filename = os.path.basename(url)
     dest = os.path.join(root, filename)
     download_file(url, dest)
-    extract_zip(dest, root)
-    if clean:
-        os.remove(dest)
+
+    if filename.endswith(".gz"):
+        extract_gzip(dest, root, clean)
+    elif filename.endswith(".zip"):
+        extract_zip(dest, root, clean)
+
+
+def get_openai_lr(model):
+    num_params = sum(p.numel() for p in model.parameters())
+    return 0.003239 - 0.0001395 * math.log(num_params)

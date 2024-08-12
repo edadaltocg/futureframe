@@ -8,11 +8,23 @@ from typing import Callable
 import requests
 from sklearn.datasets import fetch_openml
 
+from futureframe.utils import extract_zip, recursive_unzip
+
 log = logging.getLogger(__name__)
 
 
 @dataclass
 class Source(ABC):
+    """
+    Represents a data source for downloading datasets.
+
+    Attributes:
+        link (str): The URL of the dataset.
+        base_name (str): The base name of the downloaded file.
+        download_fn (Callable[[str, str], None]): The function used to download the dataset.
+        get_dataset_id_fn (Callable[[str], str]): The function used to get the dataset ID.
+    """
+
     link: str
     base_name: str
     download_fn: Callable[[str, str], None]
@@ -20,10 +32,44 @@ class Source(ABC):
 
 
 def download_dataset_from_kaggle(link: str, dest: str):
-    # This function assumes the user has the Kaggle API and is authenticated
-    if not os.path.exists(dest):
-        os.makedirs(dest)
-    os.system(f"kaggle datasets download -d {link} -p {dest}")
+    dataset_id = get_dataset_id_from_kaggle(link)
+    os.makedirs(dest, exist_ok=True)
+    try:
+        os.system(f"kaggle datasets download -d {dataset_id} -p {dest}")
+    except Exception as e:
+        log.error(f"Failed to download dataset from Kaggle: {e}")
+        log.warning("This function requires the Kaggle API and authentication.")
+        raise e
+
+    recursive_unzip(dest)
+
+
+def download_metadata_from_kaggle(link: str, dest: str):
+    dataset_id = get_dataset_id_from_kaggle(link)
+    os.makedirs(dest, exist_ok=True)
+
+    try:
+        os.system(f"kaggle datasets metadata -d {dataset_id} -p {dest}")
+    except Exception as e:
+        log.error(f"Failed to download metadata from Kaggle: {e}")
+        log.warning("This function requires the Kaggle API and authentication.")
+        raise e
+
+
+def download_competition_from_kaggle(link: str, dest: str):
+    competition_id = get_competition_id_from_kaggle(link)
+    os.makedirs(dest, exist_ok=True)
+    try:
+        os.system(f"kaggle competitions download -c {competition_id} -p {dest}")
+    except Exception as e:
+        log.error(f"Failed to download dataset from Kaggle: {e}")
+        log.warning("This function requires the Kaggle API and authentication.")
+        raise e
+
+    for file in os.listdir(dest):
+        if file.endswith(".zip"):
+            zip_path = os.path.join(dest, file)
+            extract_zip(zip_path, dest, True)
 
 
 def download_dataset_from_openml(link: str, dest: str):
@@ -60,11 +106,18 @@ def download_with_request(url, download_path):
 
 
 def get_dataset_id_from_openml(link: str):
+    link = link.rstrip("/")
     return link.split("/")[-1]
 
 
 def get_dataset_id_from_kaggle(link: str):
-    raise NotImplementedError
+    link = link.rstrip("/")
+    return "/".join(link.split("/")[-2:])
+
+
+def get_competition_id_from_kaggle(link: str):
+    link = link.rstrip("/")
+    return link.split("/")[-1]
 
 
 def get_dataset_id_from_uci(link: str):
@@ -77,10 +130,16 @@ def get_dataset_id_from_catalog(link: str):
 
 class Sources(Enum):
     KAGGLE = Source(
-        link="kaggle",
+        link="kaggle.com/datasets",
         base_name="kaggle",
         download_fn=download_dataset_from_kaggle,
         get_dataset_id_fn=get_dataset_id_from_kaggle,
+    )
+    KAGGLE_COMPETITIONS = Source(
+        link="kaggle.com/competitions",
+        base_name="kaggle/competitions",
+        download_fn=download_competition_from_kaggle,
+        get_dataset_id_fn=get_competition_id_from_kaggle,
     )
     OPENML = Source(
         link="openml.org",
@@ -126,7 +185,13 @@ def get_dataset_dest_from_link(link: str, root_dir: str):
     return os.path.join(root_dir, base_name, id)
 
 
-def download_dataset(link, root_dir):
+def download_dataset(link: str, root_dir: str):
     source = get_dataset_source_from_link(link)
     dest = get_dataset_dest_from_link(link, root_dir)
     source.value.download_fn(link, dest)
+
+
+if __name__ == "__main__":
+    from fire import Fire
+
+    Fire(download_dataset)
