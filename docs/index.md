@@ -37,7 +37,7 @@ X, y = df.drop(columns=[target_variable]), df[target_variable]
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3)
 
 # Fine-tune a pre-trained classifier with Future Frame
-model = ff.models.CM2Classifier()
+model = ff.models.cm2.CM2Classifier()
 model.finetune(X_train, y_train)
 
 # Make predictions with Future Frame
@@ -69,7 +69,3 @@ More foundation models will be integrated into the library soon. Stay stuned by 
 - We are currently under heavy development.
 - If you'd like to contribute, please send us an email at <i>eduardo(at)futureframe.ai</i>.
 - To report a bug, please write an [issue](https://github.com/futureframeai/futureframe/issues/new).
-
----
-
-Foundation models for tabular data can AI performance for Healthcare, Education, Telecommunications, Energy, and Finance industries.
