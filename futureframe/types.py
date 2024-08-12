@@ -62,13 +62,17 @@ class BaseOutput(BaseInput):
 
 
 class ColumnDtype(Enum):
-    CATEGORICAL_STR = auto()  # 1
-    CATEGORICAL_INT = auto()  # 2
+    # CYCLICAL, SPATIAL
+    NOMINAL = auto()  # 1
+    ORDINAL = auto()  # 2
     NUMERICAL_FLOAT = auto()
     NUMERICAL_INT = auto()
-    BOOLEAN = auto()
+    TEXT = auto()
+    BINARY = auto()
     MISSING = auto()
     DATETIME = auto()
+    CYCLICAL = auto()
+    SPATIAL = auto()
     OTHER = auto()
 
     @classmethod
@@ -154,10 +158,10 @@ def get_finetuning_task_type(y_true):
 
 def valuedtype_to_columndtype(valuedtype: ValueDtype):
     mapping = {
-        ValueDtype.STR: ColumnDtype.CATEGORICAL_STR,
-        ValueDtype.INT: ColumnDtype.CATEGORICAL_INT,
+        ValueDtype.STR: ColumnDtype.NOMINAL,
+        ValueDtype.INT: ColumnDtype.ORDINAL,
         ValueDtype.FLOAT: ColumnDtype.NUMERICAL_FLOAT,
-        ValueDtype.BOOL: ColumnDtype.BOOLEAN,
+        ValueDtype.BOOL: ColumnDtype.BINARY,
         ValueDtype.DATETIME: ColumnDtype.DATETIME,
         ValueDtype.TIMESTAMP: ColumnDtype.DATETIME,
         ValueDtype.NAN: ColumnDtype.MISSING,

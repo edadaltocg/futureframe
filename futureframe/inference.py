@@ -11,7 +11,7 @@ log = logging.getLogger(__name__)
 
 
 @torch.no_grad()
-def predict(model: nn.Module, X_test: pd.DataFrame, batch_size: int = 64, num_workers=0) -> Tensor:
+def predict(model: nn.Module, X_test: pd.DataFrame, batch_size: int = 64, num_workers=0, input_encoder=None) -> Tensor:
     """
     Generates predictions for the given test data using the specified model.
 
@@ -24,7 +24,7 @@ def predict(model: nn.Module, X_test: pd.DataFrame, batch_size: int = 64, num_wo
     Returns:
         numpy.ndarray: The predicted values.
     """
-    val_dataset = FeatureDataset(X_test)
+    val_dataset = FeatureDataset(X_test, input_encoder)
 
     val_dataloader = DataLoader(
         val_dataset,

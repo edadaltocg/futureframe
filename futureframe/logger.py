@@ -22,7 +22,7 @@ class ElapsedTimeFormatter(logging.Formatter):
 
 
 # Define the format for the log messages
-FORMAT = "%(message)s (Elapsed: %(elapsed_time).2f s)"
+FORMAT = "%(elapsed_time).2fs\t%(message)s"
 DATEFMT = "[%X]"
 
 # Set up the logging configuration
@@ -40,6 +40,7 @@ logger = logging.getLogger()
 for handler in logger.handlers:
     handler.setFormatter(ElapsedTimeFormatter(fmt=FORMAT, datefmt=DATEFMT))
 
+log = logger
 
 if __name__ == "__main__":
     # Example usage

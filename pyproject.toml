@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "futureframe"
-version = "0.2.1"
+version = "0.2.2"
 description = "Accelerate your data science workflow from months to days with foundation models for tabular data."
 authors = ["Future Frame"]
 maintainers = ["Eduardo Dadalto <eduardo@futureframe.ai>"]
@@ -25,6 +25,7 @@ xgboost = "^2.1.0"
 catboost = "^1.2.5"
 sentence-transformers = "^3.0.1"
 torchmetrics = "^1.4.0.post0"
+rich = "^13.7.1"
 
 [tool.poetry.dev-dependencies]
 pytest = "^8.2.0"

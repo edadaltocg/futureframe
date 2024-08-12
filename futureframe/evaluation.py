@@ -4,6 +4,7 @@ this module is designed to offer flexibility in evaluating your model's predicti
 """
 
 import logging
+from typing import Literal
 
 import numpy as np
 import torchmetrics
@@ -22,6 +23,7 @@ from torch import Tensor
 from tqdm import tqdm
 
 from futureframe.data.features import prepare_target_for_eval
+from futureframe.utils import cast_to_ndarray, cast_to_tensor
 
 log = logging.getLogger(__name__)
 
@@ -29,7 +31,12 @@ log = logging.getLogger(__name__)
 METRICS = ["accuracy", "auc", "f1", "precision", "recall", "mse", "mae", "r2", "ap"]
 
 
-def _accuracy_score(y_true: np.ndarray | Tensor, y_pred: np.ndarray | Tensor) -> float | Tensor:
+def _accuracy_score(
+    y_true: np.ndarray | Tensor,
+    y_pred: np.ndarray | Tensor,
+    task: Literal["binary", "multiclass", "multilabel"] = "binary",
+    num_classes: int | None = None,
+) -> float:
     """
     Compute the accuracy score.
 
@@ -40,12 +47,19 @@ def _accuracy_score(y_true: np.ndarray | Tensor, y_pred: np.ndarray | Tensor) ->
     Returns:
         float: The accuracy score.
     """
-    if isinstance(y_true, Tensor):
-        return torchmetrics.functional.accuracy(y_pred, y_true)
+    if isinstance(y_true, Tensor) or isinstance(y_pred, Tensor):
+        y_true = cast_to_tensor(y_true)
+        y_pred = cast_to_tensor(y_pred)
+        return torchmetrics.functional.accuracy(y_pred, y_true, task=task, num_classes=num_classes).item()
+    y_true = cast_to_ndarray(y_true)
+    y_pred = cast_to_ndarray(y_pred)
     return accuracy_score(y_true, y_pred)
 
 
-def _auc_score(y_true: np.ndarray | Tensor, y_pred: np.ndarray | Tensor) -> float | Tensor:
+def _roc_auc_score(
+    y_true: np.ndarray | Tensor,
+    y_pred: np.ndarray | Tensor,
+) -> float:
     """
     Compute the area under the ROC curve.
 
@@ -56,12 +70,21 @@ def _auc_score(y_true: np.ndarray | Tensor, y_pred: np.ndarray | Tensor) -> floa
     Returns:
         float: The AUC score.
     """
-    if isinstance(y_true, Tensor):
-        return torchmetrics.functional.auroc(y_pred, y_true)
+    if isinstance(y_true, Tensor) or isinstance(y_pred, Tensor):
+        y_true = cast_to_tensor(y_true)
+        y_pred = cast_to_tensor(y_pred)
+        return torchmetrics.functional.auroc(y_pred, y_true, task="binary").item()
+    y_true = cast_to_ndarray(y_true)
+    y_pred = cast_to_ndarray(y_pred)
     return roc_auc_score(y_true, y_pred)
 
 
-def _f1_score(y_true: np.ndarray | Tensor, y_pred: np.ndarray | Tensor) -> float | Tensor:
+def _f1_score(
+    y_true: np.ndarray | Tensor,
+    y_pred: np.ndarray | Tensor,
+    task: Literal["binary", "multiclass", "multilabel"] = "binary",
+    average: str = "micro",
+) -> float:
     """
     Compute the F1 score.
 
@@ -72,12 +95,19 @@ def _f1_score(y_true: np.ndarray | Tensor, y_pred: np.ndarray | Tensor) -> float
     Returns:
         float: The F1 score.
     """
-    if isinstance(y_true, Tensor):
-        return torchmetrics.functional.f1(y_pred, y_true)
-    return f1_score(y_true, y_pred)
+    if isinstance(y_true, Tensor) or isinstance(y_pred, Tensor):
+        y_true = cast_to_tensor(y_true)
+        y_pred = cast_to_tensor(y_pred)
+        return torchmetrics.functional.f1_score(y_pred, y_true, average=average, task=task).item()
+    y_true = cast_to_ndarray(y_true)
+    y_pred = cast_to_ndarray(y_pred)
+    return f1_score(y_true, y_pred, average=average)
 
 
-def _mse_score(y_true: np.ndarray | Tensor, y_pred: np.ndarray | Tensor) -> float | Tensor:
+def _mse_score(
+    y_true: np.ndarray | Tensor,
+    y_pred: np.ndarray | Tensor,
+) -> float:
     """
     Compute the mean squared error.
 
@@ -88,12 +118,19 @@ def _mse_score(y_true: np.ndarray | Tensor, y_pred: np.ndarray | Tensor) -> floa
     Returns:
         float: The mean squared error.
     """
-    if isinstance(y_true, Tensor):
-        return torchmetrics.functional.mean_squared_error(y_pred, y_true)
+    if isinstance(y_true, Tensor) or isinstance(y_pred, Tensor):
+        y_true = cast_to_tensor(y_true)
+        y_pred = cast_to_tensor(y_pred)
+        return torchmetrics.functional.mean_squared_error(y_pred, y_true).item()
+    y_true = cast_to_ndarray(y_true)
+    y_pred = cast_to_ndarray(y_pred)
     return mean_squared_error(y_true, y_pred)
 
 
-def _mae_score(y_true: np.ndarray | Tensor, y_pred: np.ndarray | Tensor) -> float | Tensor:
+def _mae_score(
+    y_true: np.ndarray | Tensor,
+    y_pred: np.ndarray | Tensor,
+) -> float:
     """
     Compute the mean absolute error.
 
@@ -104,12 +141,19 @@ def _mae_score(y_true: np.ndarray | Tensor, y_pred: np.ndarray | Tensor) -> floa
     Returns:
         float: The mean absolute error.
     """
-    if isinstance(y_true, Tensor):
-        return torchmetrics.functional.mean_absolute_error(y_pred, y_true)
+    if isinstance(y_true, Tensor) or isinstance(y_pred, Tensor):
+        y_true = cast_to_tensor(y_true)
+        y_pred = cast_to_tensor(y_pred)
+        return torchmetrics.functional.mean_absolute_error(y_pred, y_true).item()
+    y_true = cast_to_ndarray(y_true)
+    y_pred = cast_to_ndarray(y_pred)
     return mean_absolute_error(y_true, y_pred)
 
 
-def _r2_score(y_true: np.ndarray | Tensor, y_pred: np.ndarray | Tensor) -> float | Tensor:
+def _r2_score(
+    y_true: np.ndarray | Tensor,
+    y_pred: np.ndarray | Tensor,
+) -> float:
     """
     Compute the coefficient of determination (R^2).
 
@@ -120,12 +164,21 @@ def _r2_score(y_true: np.ndarray | Tensor, y_pred: np.ndarray | Tensor) -> float
     Returns:
         float: The R^2 score.
     """
-    if isinstance(y_true, Tensor):
-        return torchmetrics.functional.r2score(y_pred, y_true)
+    if isinstance(y_true, Tensor) or isinstance(y_pred, Tensor):
+        y_true = cast_to_tensor(y_true)
+        y_pred = cast_to_tensor(y_pred)
+        return torchmetrics.functional.r2_score(y_pred, y_true).item()
+    y_true = cast_to_ndarray(y_true)
+    y_pred = cast_to_ndarray(y_pred)
     return r2_score(y_true, y_pred)
 
 
-def _precision_score(y_true: np.ndarray | Tensor, y_pred: np.ndarray | Tensor) -> float | Tensor:
+def _precision_score(
+    y_true: np.ndarray | Tensor,
+    y_pred: np.ndarray | Tensor,
+    task: Literal["binary", "multiclass", "multilabel"] = "binary",
+    average: str = "micro",
+) -> float:
     """
     Compute the precision score.
 
@@ -136,12 +189,21 @@ def _precision_score(y_true: np.ndarray | Tensor, y_pred: np.ndarray | Tensor) -
     Returns:
         float: The precision score.
     """
-    if isinstance(y_true, Tensor):
-        return torchmetrics.functional.precision(y_pred, y_true)
-    return precision_score(y_true, y_pred)
+    if isinstance(y_true, Tensor) or isinstance(y_pred, Tensor):
+        y_true = cast_to_tensor(y_true)
+        y_pred = cast_to_tensor(y_pred)
+        return torchmetrics.functional.precision(y_pred, y_true, average=average, task=task).item()
+    y_true = cast_to_ndarray(y_true)
+    y_pred = cast_to_ndarray(y_pred)
+    return precision_score(y_true, y_pred, average=average)
 
 
-def _recall_score(y_true: np.ndarray | Tensor, y_pred: np.ndarray | Tensor) -> float | Tensor:
+def _recall_score(
+    y_true: np.ndarray | Tensor,
+    y_pred: np.ndarray | Tensor,
+    average: str = "micro",
+    task: Literal["binary", "multiclass", "multilabel"] = "binary",
+) -> float:
     """
     Compute the recall score.
 
@@ -152,12 +214,20 @@ def _recall_score(y_true: np.ndarray | Tensor, y_pred: np.ndarray | Tensor) -> f
     Returns:
         float: The recall score.
     """
-    if isinstance(y_true, Tensor):
-        return torchmetrics.functional.recall(y_pred, y_true)
-    return recall_score(y_true, y_pred)
+    if isinstance(y_true, Tensor) or isinstance(y_pred, Tensor):
+        y_true = cast_to_tensor(y_true)
+        y_pred = cast_to_tensor(y_pred)
+        return torchmetrics.functional.recall(y_pred, y_true, average=average, task=task).item()
+    y_true = cast_to_ndarray(y_true)
+    y_pred = cast_to_ndarray(y_pred)
+    return recall_score(y_true, y_pred, average=average)
 
 
-def _ap_score(y_true: np.ndarray | Tensor, y_pred: np.ndarray | Tensor) -> float | Tensor:
+def _average_precision_score(
+    y_true: np.ndarray | Tensor,
+    y_pred: np.ndarray | Tensor,
+    task: Literal["binary", "multiclass", "multilabel"] = "binary",
+) -> float:
     """
     Compute the average precision score.
 
@@ -168,13 +238,20 @@ def _ap_score(y_true: np.ndarray | Tensor, y_pred: np.ndarray | Tensor) -> float
     Returns:
         float: The average precision score.
     """
-    if isinstance(y_true, Tensor):
-        return torchmetrics.functional.average_precision(y_pred, y_true)
+    if isinstance(y_true, Tensor) or isinstance(y_pred, Tensor):
+        y_true = cast_to_tensor(y_true)
+        y_pred = cast_to_tensor(y_pred)
+        return torchmetrics.functional.average_precision(y_pred, y_true, task=task).item()
+    y_true = cast_to_ndarray(y_true)
+    y_pred = cast_to_ndarray(y_pred)
     return average_precision_score(y_true, y_pred)
 
 
 def eval_binary_classification(
-    y_true: np.ndarray, y_pred: np.ndarray, y_pred_is_probability: bool = False, threshold: float | None = None
+    y_true: np.ndarray | Tensor,
+    y_pred: np.ndarray | Tensor,
+    y_pred_is_probability: bool = False,
+    threshold: float | None = None,
 ) -> dict[str, float]:
     """
     Evaluate the performance of a binary classification model.
@@ -201,19 +278,23 @@ def eval_binary_classification(
     else:
         threshold = 0.5 if threshold is None else threshold
 
-    y_pred_hard = (y_pred >= 0).astype(int)
+    y_pred_hard = y_pred >= threshold
 
-    acc = accuracy_score(y_true, y_pred_hard)
-    auc = roc_auc_score(y_true, y_pred)
-    f1 = f1_score(y_true, y_pred_hard)
-    precision = precision_score(y_true, y_pred_hard)
-    recall = recall_score(y_true, y_pred_hard)
-    ap = average_precision_score(y_true, y_pred)
+    acc = _accuracy_score(y_true, y_pred_hard)
+    auc = _roc_auc_score(y_true, y_pred)
+    f1 = _f1_score(y_true, y_pred_hard)
+    precision = _precision_score(y_true, y_pred_hard)
+    recall = _recall_score(y_true, y_pred_hard)
+    ap = _average_precision_score(y_true, y_pred)
 
-    return dict(accuracy=acc, auc=auc, f1=f1, precision=precision, recall=recall, ap=ap)
+    res = dict(accuracy=acc, auc=auc, f1=f1, precision=precision, recall=recall, ap=ap)
+    return res
 
 
-def eval_regression(y_true: np.ndarray, y_pred: np.ndarray) -> dict[str, float]:
+def eval_regression(
+    y_true: np.ndarray | Tensor,
+    y_pred: np.ndarray | Tensor,
+) -> dict[str, float]:
     """
     Evaluate the performance of a regression model by calculating various metrics.
 
@@ -228,13 +309,16 @@ def eval_regression(y_true: np.ndarray, y_pred: np.ndarray) -> dict[str, float]:
             - mae (float): The mean absolute error.
             - r2 (float): The coefficient of determination ($R^2$).
     """
-    mse = mean_squared_error(y_true, y_pred)
-    mae = mean_absolute_error(y_true, y_pred)
-    r2 = r2_score(y_true, y_pred)
+    mse = _mse_score(y_true, y_pred)
+    mae = _mae_score(y_true, y_pred)
+    r2 = _r2_score(y_true, y_pred)
     return dict(mse=mse, mae=mae, r2=r2)
 
 
-def eval_multiclass_clf(y_true: np.ndarray, y_pred: np.ndarray) -> dict[str, float]:
+def eval_multiclass_clf(
+    y_true: np.ndarray | Tensor,
+    y_pred: np.ndarray | Tensor,
+) -> dict[str, float]:
     """
     Evaluate the performance of a multiclass classification model.
 
@@ -249,18 +333,21 @@ def eval_multiclass_clf(y_true: np.ndarray, y_pred: np.ndarray) -> dict[str, flo
             - f1: F1 score.
             - precision: Precision score.
             - recall: Recall score.
+            - ap: Average precision score.
     """
-    y_pred_hard = np.argmax(y_pred, axis=1).reshape(-1)
-    acc = accuracy_score(y_true, y_pred_hard)
-    f1 = f1_score(y_true, y_pred_hard, average="macro")
-    precision = precision_score(y_true, y_pred_hard, average="macro")
-    recall = recall_score(y_true, y_pred_hard, average="macro")
+    if y_pred.ndim > 1:
+        y_pred = np.argmax(y_pred, axis=1).reshape(-1)
+    acc = _accuracy_score(y_true, y_pred)
+    f1 = _f1_score(y_true, y_pred, average="macro")
+    precision = _precision_score(y_true, y_pred, average="macro")
+    recall = _recall_score(y_true, y_pred, average="macro")
+    # ap = _average_precision_score(y_true, y_pred, task="multiclass")
     return dict(accuracy=acc, f1=f1, precision=precision, recall=recall)
 
 
 def eval(
-    y_true: np.ndarray,
-    y_pred: np.ndarray,
+    y_true: np.ndarray | Tensor,
+    y_pred: np.ndarray | Tensor,
     return_non_none_metrics_only: bool = False,
     y_pred_is_probability: bool = False,
     num_classes: int | None = None,
@@ -282,14 +369,14 @@ def eval(
         ValueError: If num_classes is less than 1.
     """
 
-    def determine_num_classes(y_pred: np.ndarray, num_classes: int | None) -> int:
+    def determine_num_classes(y_pred, num_classes: int | None) -> int:
         if num_classes is not None:
             return num_classes
         if y_pred.ndim > 1:
             return y_pred.shape[1]
         return 1
 
-    def evaluate(y_true: np.ndarray, y_pred: np.ndarray, num_classes: int) -> dict:
+    def evaluate(y_true, y_pred, num_classes: int) -> dict:
         if num_classes == 1:
             y_pred = y_pred.reshape(-1)
             return eval_regression(y_true, y_pred)
