@@ -5,7 +5,7 @@ from sklearn.model_selection import train_test_split
 import futureframe as ff
 
 
-dataset_name = "tests/data/churn.csv"
+dataset_name = "https://raw.githubusercontent.com/futureframeai/futureframe/main/tests/data/churn.csv"
 target_variable = "Churn"
 df = pd.read_csv(dataset_name)
 df.info()
