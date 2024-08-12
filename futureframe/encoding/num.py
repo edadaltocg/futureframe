@@ -1,9 +1,9 @@
 from typing import Self
 
-from sklearn.preprocessing import MinMaxScaler, PowerTransformer, QuantileTransformer, RobustScaler
 import pandas as pd
+from sklearn.preprocessing import MinMaxScaler, PowerTransformer, QuantileTransformer, RobustScaler
+
 from futureframe.encoding.base import BaseFeatureEncoder
-from sklearn.preprocessing import PowerTransformer
 from futureframe.logger import log
 
 

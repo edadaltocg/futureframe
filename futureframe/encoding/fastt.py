@@ -1,12 +1,13 @@
-import shutil
 import os
+import shutil
 
-from encoding.base import BaseFeatureEncoder
-from futureframe import config
-import numpy as np
-import pandas as pd
 import fasttext
 import fasttext.util
+import numpy as np
+import pandas as pd
+from encoding.base import BaseFeatureEncoder
+
+from futureframe import config
 
 
 class FastTextFeatureEncoder(BaseFeatureEncoder):

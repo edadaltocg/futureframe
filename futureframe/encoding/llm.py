@@ -1,15 +1,15 @@
-from typing import Any, Self
-import shelve
-from futureframe.data.cache import CacheDict
-import numpy as np
-import torch
-import os
-import pandas as pd
-from encoding.base import BaseFeatureEncoder
-from futureframe import config
-from sentence_transformers import SentenceTransformer
 import logging
+import os
+from typing import Any, Self
+
+import numpy as np
+import pandas as pd
+import torch
+from encoding.base import BaseFeatureEncoder
+from sentence_transformers import SentenceTransformer
 from tqdm import tqdm
+
+from futureframe import config
 
 log = logging.getLogger(__name__)
 

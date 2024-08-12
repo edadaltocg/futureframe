@@ -18,16 +18,16 @@ from pathlib import Path
 from typing import Optional, Self
 
 import pandas as pd
-from sklearn.preprocessing import MinMaxScaler
 import torch
 import torch.nn.functional as F
 import torch.nn.init as nn_init
+from sklearn.preprocessing import MinMaxScaler
 from torch import Tensor, nn
 from transformers import BertTokenizerFast
 
 from futureframe import config
-from futureframe.encoding.base import BaseFeatureEncoder
 from futureframe.data.features import infer_majority_dtype
+from futureframe.encoding.base import BaseFeatureEncoder
 from futureframe.encoding.num import NumericFeatureEncoder
 from futureframe.models.base import BaseModelForFinetuning
 from futureframe.types import BaseInput, ColumnDtype
