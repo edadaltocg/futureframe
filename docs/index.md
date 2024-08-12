@@ -28,7 +28,7 @@ from sklearn.metrics import roc_auc_score
 import futureframe as ff
 
 # Import data
-dataset_name = "tests/data/churn.csv"
+dataset_name = "https://raw.githubusercontent.com/futureframeai/futureframe/main/tests/data/churn.csv"
 target_variable = "Churn"
 df = pd.read_csv(dataset_name)
 
