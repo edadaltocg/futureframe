@@ -1,6 +1,6 @@
 # 💠 Future Frame
 
-Empowering Data Scientists with Foundation Models for Tabular data.
+Empowering Data Scientists with Foundation Models for Tabular Data
 
 - This Python package allows you to interact with pre-trained foundation models for tabular data.
 - Easily fine-tune them on your classification and regression use cases in a single line of code.
@@ -54,7 +54,7 @@ print(f"AUC: {auc:0.2f}")
 | ---------- | ---------------------------------------------------------- | --------------------------------------------------- | -------------------------------------- |
 | CM2        | Towards Cross-Table Masked Pretraining for Web Data Mining | [Ye et al., 2024](https://arxiv.org/abs/2307.04308) | [Link](https://github.com/Chao-Ye/CM2) |
 
-More foundation models will be integrated into the library soon. Stay stuned by joining our [waitlist](https://futureframe.ai/)!
+More foundation models will be integrated into the library soon. Stay tuned by joining our [waitlist](https://futureframe.ai/)!
 
 ## Links
 
