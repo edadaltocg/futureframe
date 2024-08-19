@@ -1,4 +1,4 @@
-from typing import Self
+from typing_extensions import Self
 
 import pandas as pd
 from sklearn.preprocessing import MinMaxScaler, PowerTransformer, QuantileTransformer, RobustScaler
