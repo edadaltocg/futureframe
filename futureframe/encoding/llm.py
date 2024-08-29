@@ -1,7 +1,6 @@
 import logging
 import os
 from typing import Any
-from typing_extensions import Self
 
 import numpy as np
 import pandas as pd
@@ -9,6 +8,7 @@ import torch
 from encoding.base import BaseFeatureEncoder
 from sentence_transformers import SentenceTransformer
 from tqdm import tqdm
+from typing_extensions import Self
 
 from futureframe import config
 
