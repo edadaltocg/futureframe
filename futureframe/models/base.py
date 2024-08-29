@@ -10,9 +10,6 @@ from futureframe.inference import predict
 class BaseModelForFinetuning(nn.Module):
     """
     Base class for finetuning models.
-
-    Args:
-        input_encoder: The input encoder for the model.
     """
 
     def finetune(

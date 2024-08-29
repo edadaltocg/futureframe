@@ -1,7 +1,6 @@
-from typing_extensions import Self
-
 import pandas as pd
 from sklearn.preprocessing import MinMaxScaler, PowerTransformer, QuantileTransformer, RobustScaler
+from typing_extensions import Self
 
 from futureframe.encoding.base import BaseFeatureEncoder
 from futureframe.logger import log
@@ -36,14 +35,20 @@ class NumericFeatureEncoder(BaseFeatureEncoder):
     ) -> None:
         super().__init__(root, download, overwrite, name, *args, **kwargs)
         self.transformation = transformation
+        self.no_num = False
 
     def prepare(self, data: pd.DataFrame) -> "Self":
         data = data.select_dtypes(exclude=["object"])
+        if data.shape[1] == 0:
+            self.no_num = True
+            return self
         self.transformation.fit(data)
         return self
 
     def encode(self, data: pd.DataFrame) -> pd.DataFrame:
         data = data.select_dtypes(exclude=["object"])
+        if data.shape[1] == 0 or self.no_num:
+            return data
         data_ = self.transformation.transform(data)
         res = pd.DataFrame(data_, columns=data.columns, index=data.index)
         return res

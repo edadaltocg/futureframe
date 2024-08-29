@@ -16,7 +16,6 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
-from typing_extensions import Self
 
 import pandas as pd
 import torch
@@ -25,6 +24,7 @@ import torch.nn.init as nn_init
 from sklearn.preprocessing import MinMaxScaler
 from torch import Tensor, nn
 from transformers import BertTokenizerFast
+from typing_extensions import Self
 
 from futureframe import config
 from futureframe.data.features import infer_majority_dtype
