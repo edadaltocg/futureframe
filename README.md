@@ -1,6 +1,6 @@
 # 💠 Future Frame
 
-Empowering Data Scientists with Foundation Models for Tabular data.
+Empowering Data Scientists with Foundation Models for Tabular Data
 
 - This Python package allows you to interact with pre-trained foundation models for tabular data.
 - Easily fine-tune them on your classification and regression use cases in a single line of code.
@@ -51,14 +51,15 @@ print(f"AUC: {auc:0.2f}")
 ## Models
 
 | Model Name       | Paper Title                                                                | Paper                                                                               | GitHub                                                    |
-| ---------------- | -------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- | --------------------------------------------------------- | ---------------------------------------- |
+| ---------------- | -------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- | --------------------------------------------------------- |
 | CM2              | Towards Cross-Table Masked Pretraining for Web Data Mining                 | [Ye et al., 2024](https://arxiv.org/abs/2307.04308)                                 | [Link](https://github.com/Chao-Ye/CM2)                    |
 | CARTE (soon!)    | CARTE: Pretraining and Transfer for Tabular Learning                       | [Kim et al., 2024](https://arxiv.org/abs/2402.16785)                                | [Link](https://github.com/soda-inria/carte)               |
 | TabText (soon!)  | TabText: A Flexible and Contextual Approach to Tabular Data Representation | [Carballo et al., 2023](https://arxiv.org/abs/2206.10381)                           | -                                                         |
-| TabPFN (soon!)   |                                                                            | TabPFN: A Transformer That Solves Small Tabular Classification Problems in a Second | [Hollmann et al., 2022](https://arxiv.org/abs/2207.01848) | [Link](https://github.com/automl/TabPFN) |
+| TabPFN (soon!)   | TabPFN: A Transformer That Solves Small Tabular Classification Problems in a Second | [Hollmann et al., 2022](https://arxiv.org/abs/2207.01848)                  | [Link](https://github.com/automl/TabPFN)                  |
 | TransTab (soon!) | Transtab: Learning Transferable Tabular Transformers Across Tables         | [Wang et al., 2022](https://arxiv.org/abs/2205.09328)                               | [Link](https://github.com/RyanWangZf/transtab)            |
 
 More models will be integrated into the library soon. Stay stuned by joining our [waitlist](https://futureframe.ai/)!
+
 
 ## Links
 
