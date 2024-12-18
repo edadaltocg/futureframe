@@ -1,15 +1,10 @@
-import warnings
-
 import pandas as pd
 from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import train_test_split
 
 import futureframe as ff
 
-warnings.filterwarnings("ignore")
-
-
-dataset_name = "tests/data/churn.csv"
+dataset_name = "https://raw.githubusercontent.com/futureframeai/futureframe/main/tests/data/churn.csv"
 target_variable = "Churn"
 df = pd.read_csv(dataset_name)
 df.info()
@@ -20,7 +15,7 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_
 ##############
 # Future Frame
 ##############
-model = ff.models.CM2Classifier()
+model = ff.models.cm2.CM2Classifier()
 model.finetune(X_train, y_train)
 
 y_pred = model.predict(X_test)
