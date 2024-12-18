@@ -1,5 +1,6 @@
 """Generate the code reference pages."""
 
+import fnmatch
 import os
 from pathlib import Path
 
@@ -15,6 +16,14 @@ if os.path.exists(root / "docs/reference"):
 
 print(f"Generating reference pages from {src}")
 
+ignore_list = [
+    "_*",
+    "__init__",
+    "__main__",
+    "_registry",
+    "types",
+]
+
 for path in sorted(src.rglob("*.py")):
     print(f"Generating reference page for {path}")
     module_path = path.relative_to(src).with_suffix("")
@@ -25,9 +34,10 @@ for path in sorted(src.rglob("*.py")):
     parts = tuple(module_path.parts)
     parts = (prefix, *parts)
 
-    if parts[-1] == "__init__":
+    if parts[-1] in ignore_list:
         continue
-    elif parts[-1] == "__main__":
+
+    if any(fnmatch.fnmatch(parts[-1], pattern) for pattern in ignore_list):
         continue
 
     with mkdocs_gen_files.open(full_doc_path, "w") as fd:
