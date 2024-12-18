@@ -1,1 +1,5 @@
-from . import baselines, benchmarks, config, data_types, evaluate, features, models, predictor, registry, utils
+import importlib.metadata
+
+from . import data, evaluation, logger, models, utils
+
+__version__ = importlib.metadata.version("futureframe")
