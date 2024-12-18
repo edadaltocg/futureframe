@@ -20,3 +20,4 @@ __pycache__/
 /pretrained-models
 /finetuned-models
 /checkpoints
+/cache
